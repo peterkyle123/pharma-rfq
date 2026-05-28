@@ -12,6 +12,7 @@
 
     <form wire:submit.prevent="save">
 
+        {{-- RFQ Information --}}
         <div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">
             <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">RFQ Information</p>
 
@@ -87,26 +88,48 @@
 
         {{-- Line Items --}}
         <div class="bg-white rounded-xl border border-gray-200 mb-4 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Line Items</p>
+                <div class="px-6 py-4 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                    Line Items
+                    <span class="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                        {{ count($filteredItems) }}{{ count($filteredItems) !== $totalItemCount ? ' of ' . $totalItemCount : '' }}
+                    </span>
+                </p>
                 <button type="button" wire:click="addItem"
                         class="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg transition">
                     + Add Item
                 </button>
+        </div>
+    @error('items_empty')
+        <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+    @enderror
+</div>
+
+            {{-- Search bar --}}
+            <div class="px-6 py-3 border-b border-gray-100">
+                <input wire:model.live.debounce.300ms="itemSearch"
+                       type="text"
+                       placeholder="Search by description or unit..."
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
+
             <table class="w-full text-sm">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 border-b border-gray-100">
                     <tr>
+                        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">#</th>
                         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Item Description</th>
                         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Unit</th>
                         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Qty</th>
                         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Unit Price (₱)</th>
+                        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Total (₱)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($items as $index => $item)
-                        <tr class="border-t border-gray-100">
+                    @forelse ($pagedItems as $index => $item)
+                        <tr wire:key="item-{{ $index }}-{{ $item['item_description'] }}-{{ $item['unit'] }}" class="border-t border-gray-100 hover:bg-gray-50">
+                            <td class="px-4 py-2 text-gray-400 text-xs">{{ ($itemPage - 1) * $itemsPerPage + $loop->iteration }}</td>
                             <td class="px-4 py-2">
                                 <input type="text" wire:model="items.{{ $index }}.item_description"
                                        placeholder="e.g. Amoxicillin 500mg Capsule"
@@ -131,18 +154,55 @@
                                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 @error("items.{$index}.unit_price") <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </td>
+                            <td class="px-4 py-2 text-gray-500 text-sm">
+                                @php
+                                    $total = ($item['unit_price'] && $item['quantity'])
+                                        ? number_format((float)$item['unit_price'] * (float)$item['quantity'], 2)
+                                        : null;
+                                @endphp
+                                {{ $total ? '₱' . $total : '—' }}
+                            </td>
                             <td class="px-4 py-2">
-                                @if (count($items) > 1)
+                                @if ($totalItemCount > 1)
                                     <button type="button" wire:click="removeItem({{ $index }})"
-                                            class="text-red-400 hover:text-red-600 text-xs">
+                                            class="text-red-400 hover:text-red-600 text-xs border border-red-200 rounded-lg px-2 py-1 transition">
                                         Remove
                                     </button>
                                 @endif
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">
+                                @if ($itemSearch)
+                                    No items match "<span class="font-medium">{{ $itemSearch }}</span>".
+                                @else
+                                    No items added yet.
+                                @endif
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
+
+            {{-- Pagination --}}
+            @if ($totalItemPages > 1)
+                <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                    <span class="text-xs">Page {{ $itemPage }} of {{ $totalItemPages }}</span>
+                    <div class="flex gap-2">
+                        <button type="button" wire:click="itemPrevPage"
+                                @disabled($itemPage <= 1)
+                                class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                            ← Prev
+                        </button>
+                        <button type="button" wire:click="itemNextPage"
+                                @disabled($itemPage >= $totalItemPages)
+                                class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                            Next →
+                        </button>
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- Notes --}}

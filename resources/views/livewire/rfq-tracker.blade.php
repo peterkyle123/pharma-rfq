@@ -1,4 +1,3 @@
-
 <div>
 @if (session()->has('message'))
     <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
@@ -11,7 +10,7 @@
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-xl font-semibold text-gray-900">RFQ Tracker</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Incoming government RFQs — supplier view</p>
+            <p class="text-sm text-gray-500 mt-0.5">For Small Value Procurement and Direct Acquisition</p>
         </div>
         <a href="{{ route('rfqs.create') }}"
            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
@@ -59,7 +58,7 @@
     </div>
 
     {{-- Table --}}
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200 overflow-visible">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -84,9 +83,14 @@
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse ($rfqs as $rfq)
-                    <tr class="hover:bg-gray-50 transition">
+
+            @forelse ($rfqs as $rfq)
+                <tbody wire:key="rfq-{{ $rfq->id }}" class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">
+
+                    {{-- Main row --}}
+                    <tr class="hover:bg-gray-50 transition cursor-pointer"
+                        title="Click to view attachments"
+                        wire:click="toggleOpen({{ $rfq->id }})">
                         <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ $rfq->rfq_number }}</td>
                         <td class="px-4 py-3">
                             <p class="font-medium text-gray-900">{{ $rfq->agency->name }}</p>
@@ -99,7 +103,7 @@
                             {{ $rfq->abc ? '₱' . number_format($rfq->abc, 0) : '—' }}
                         </td>
                         <td class="px-4 py-3">
-                           @php $days = (int) round(now()->startOfDay()->diffInDays($rfq->deadline->startOfDay(), false)); @endphp
+                            @php $days = (int) round(now()->startOfDay()->diffInDays($rfq->deadline->startOfDay(), false)); @endphp
                             <span class="text-sm {{ $days < 0 ? 'text-red-600' : ($days <= 1 ? 'text-red-500' : ($days <= 3 ? 'text-amber-600' : 'text-gray-500')) }}">
                                 {{ $days < 0 ? 'Overdue' : ($days === 0 ? 'Today' : ($days === 1 ? '1 day left' : $days . ' days left')) }}
                             </span>
@@ -118,21 +122,86 @@
                                 {{ $rfq->status }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-right">
-                            <a href="{{ route('rfqs.show', $rfq) }}"
-                               class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition">
-                                View
-                            </a>
+                     <td class="px-4 py-3 text-right relative overflow-visible" @click.stop x-data>
+                            <div class="flex items-center justify-end gap-2">
+                            
+                             <!-- <span class="relative group cursor-pointer text-gray-400 text-xs">
+                                {{ in_array($rfq->id, $openRows) ? '▲' : '▼' }}
+                                <span class="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                                    View Attachments
+                                </span>
+                            </span> -->
+                                <a href="{{ route('rfqs.show', $rfq) }}"
+                                   class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition">
+                                    View
+                                </a>
+                            </div>
                         </td>
                     </tr>
-                @empty
+                @if(!in_array($rfq->id, $openRows))
+                    <tr wire:click="toggleOpen({{ $rfq->id }})" class="cursor-pointer border-t-0">
+    <td colspan="7" class="text-center text-xs text-gray-400 italic pb-2">
+                            click row to view attachments
+                        </td>
+                    </tr>
+                    @endif
+
+                    {{-- Document checklist dropdown --}}
+                    @if(in_array($rfq->id, $openRows))
+                    <tr>
+    <td colspan="7" class="px-6 py-4">
+                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Documents on hand</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                @php
+                                $docs = [
+                                    'rfq_form'        => 'Request for Quotation Form',
+                                    'notice_of_award' => 'Notice of Award',
+                                    'purchase_order'  => 'Purchase Order',
+                                    'ntp'             => 'NTP',
+                                ];
+                                $rfqDocs = $rfq->documents ?? [];
+                                @endphp
+                                @foreach ($docs as $key => $label)
+                                    @php
+                                        $docData   = $rfqDocs[$key] ?? false;
+                                        $isChecked = is_array($docData) ? !empty($docData['received']) : (bool) $docData;
+                                        $docDate   = is_array($docData) ? ($docData['date'] ?? '') : '';
+                                    @endphp
+                                    <div class="flex flex-col gap-1">
+                                        <label class="flex items-center gap-2 cursor-pointer select-none group">
+                                            <input type="checkbox"
+                                                   @checked($isChecked)
+                                                   wire:click.stop="toggleDoc({{ $rfq->id }}, '{{ $key }}')"
+                                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                            <span class="text-sm text-gray-700 group-hover:text-gray-900">{{ $label }}</span>
+                                        </label>
+                                        @if($isChecked)
+                                            <div class="ml-6 flex items-center gap-2">
+                                                <label class="text-xs text-gray-400">Date received:</label>
+                                                <input type="date"
+                                                       value="{{ $docDate }}"
+                                                       x-on:change="$wire.setDocDate({{ $rfq->id }}, '{{ $key }}', $event.target.value)"
+                                                       class="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </td>
+                    </tr>
+                    @endif
+
+                </tbody>
+            @empty
+                <tbody>
                     <tr>
                         <td colspan="7" class="px-4 py-12 text-center text-sm text-gray-400">
                             No RFQs found. Add your first one!
                         </td>
                     </tr>
-                @endforelse
-            </tbody>
+                </tbody>
+            @endforelse
+
         </table>
         @if ($rfqs->hasPages())
             <div class="px-4 py-3 border-t border-gray-100">

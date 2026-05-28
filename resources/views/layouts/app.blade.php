@@ -8,27 +8,41 @@
     @livewireStyles
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-900 min-h-screen">
+<body class="bg-gray-50 text-gray-900 min-h-screen">
 
     {{-- Navbar --}}
-    <nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <span class="text-blue-600 font-bold text-lg">💊 RFQTracker</span>
-            <span class="text-xs text-gray-400">Supplier Portal</span>
+    <nav class="bg-white border-b border-gray-100 px-6 py-0 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between h-14">
+
+            {{-- Logo --}}
+            <a href="{{ route('rfqs.index') }}" class="flex items-center gap-2.5 text-blue-600 font-bold text-base">
+                <div class="bg-blue-600 text-white rounded-lg w-7 h-7 flex items-center justify-center text-sm">💊</div>
+                <span>RFQTracker</span>
+                
+            </a>
+
+            {{-- Nav links --}}
+            <div class="flex items-center gap-1 text-sm">
+                <a href="{{ route('rfqs.index') }}"
+                   class="px-4 py-2 rounded-lg transition font-medium
+                       {{ request()->is('rfqs*') ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+                    RFQ Tracker
+                </a>
+                <a href="{{ route('agencies.index') }}"
+                   class="px-4 py-2 rounded-lg transition font-medium
+                       {{ request()->is('agencies*') ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+                    Agencies
+                </a>
+            </div>
+
         </div>
-       <div class="flex items-center gap-4 text-sm text-gray-500">
-    <a href="{{ route('rfqs.index') }}" class="hover:text-gray-900 transition">RFQ Tracker</a>
-    <a href="{{ route('agencies.index') }}" class="hover:text-gray-900 transition">Agencies</a>
-</div>
     </nav>
 
-
-
     {{-- Main content --}}
-   <main class="max-w-6xl mx-auto px-6 py-8">
-    @yield('content')
-    {{ $slot ?? '' }}
-</main>
+    <main class="max-w-6xl mx-auto px-6 py-8">
+        @yield('content')
+        {{ $slot ?? '' }}
+    </main>
 
     @livewireScripts
 </body>

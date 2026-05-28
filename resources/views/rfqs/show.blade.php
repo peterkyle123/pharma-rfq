@@ -2,6 +2,13 @@
 
 @section('content')
 <div>
+    {{-- Flash message --}}
+    @if (session('message'))
+        <div class="mb-4 bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-lg">
+            {{ session('message') }}
+        </div>
+    @endif
+
     {{-- Header --}}
     <div class="flex items-center justify-between mb-6">
         <div>
@@ -71,15 +78,42 @@
         </div>
     </div>
 
-    {{-- Line Items --}}
-    <div class="bg-white rounded-xl border border-gray-200 mb-4 overflow-hidden">
+    {{-- Line Items with Alpine.js client-side search --}}
+    @php
+        $itemsJson = $rfq->items->map(fn($i) => [
+            'item_description' => $i->item_description,
+            'unit'             => $i->unit,
+            'quantity'         => $i->quantity,
+            'unit_price'       => $i->unit_price,
+            'total_price'      => $i->total_price,
+        ])->toJson();
+    @endphp
+
+    <div class="bg-white rounded-xl border border-gray-200 mb-4 overflow-hidden"
+         x-data="itemSearch({{ $itemsJson }})"
+         x-init="init()">
+
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Line Items</p>
-            <p class="text-xs text-gray-400">{{ $rfq->items->count() }} item(s)</p>
+            <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                Line Items
+                <span class="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full"
+                      x-text="search ? filtered.length + ' of {{ $rfq->items->count() }}' : '{{ $rfq->items->count() }}'">
+                </span>
+            </p>
         </div>
+
+        {{-- Search bar --}}
+        <div class="px-6 py-3 border-b border-gray-100">
+            <input x-model="search"
+                   type="text"
+                   placeholder="Search by description or unit..."
+                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
         <table class="w-full text-sm">
-            <thead class="bg-gray-50">
+            <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500">#</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500">Item Description</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500">Unit</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500">Qty</th>
@@ -88,45 +122,66 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-                @forelse ($rfq->items as $item)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-3 font-medium text-gray-900">{{ $item->item_description }}</td>
-                        <td class="px-6 py-3 text-gray-500">{{ $item->unit }}</td>
-                        <td class="px-6 py-3 text-gray-500">{{ number_format($item->quantity) }}</td>
-                        <td class="px-6 py-3 text-gray-900">
-                            {{ $item->unit_price ? '₱' . number_format($item->unit_price, 2) : '—' }}
-                        </td>
-                        <td class="px-6 py-3 font-medium text-gray-900">
-                            {{ $item->total_price ? '₱' . number_format($item->total_price, 2) : '—' }}
-                        </td>
-                    </tr>
-                @empty
+                <template x-if="paged.length === 0">
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-400">
-                            No items added yet.
+                        <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-400">
+                            <span x-show="search">No items match "<span x-text="search" class="font-medium"></span>".</span>
+                            <span x-show="!search">No items added yet.</span>
                         </td>
                     </tr>
-                @endforelse
+                </template>
+                <template x-for="(item, i) in paged" :key="i">
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-3 text-gray-400 text-xs" x-text="(page - 1) * perPage + i + 1"></td>
+                        <td class="px-6 py-3 font-medium text-gray-900" x-text="item.item_description"></td>
+                        <td class="px-6 py-3 text-gray-500" x-text="item.unit"></td>
+                        <td class="px-6 py-3 text-gray-500" x-text="Number(item.quantity).toLocaleString()"></td>
+                        <td class="px-6 py-3 text-gray-900"
+                            x-text="item.unit_price ? '₱' + Number(item.unit_price).toLocaleString('en-PH', {minimumFractionDigits:2}) : '—'">
+                        </td>
+                        <td class="px-6 py-3 font-medium text-gray-900"
+                            x-text="item.total_price ? '₱' + Number(item.total_price).toLocaleString('en-PH', {minimumFractionDigits:2}) : '—'">
+                        </td>
+                    </tr>
+                </template>
             </tbody>
+
             @if ($rfq->items->count() > 0)
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
-                        <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Total Quoted</td>
+                        <td colspan="5" class="px-6 py-3 text-right text-sm font-medium text-gray-500">Total Quoted</td>
                         <td class="px-6 py-3 font-semibold text-gray-900">
                             ₱{{ number_format($rfq->total_quoted, 2) }}
                         </td>
                     </tr>
-                    <tr>
-                        <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-500">ABC Remaining</td>
-                        @php $remaining = $rfq->abc - $rfq->total_quoted; @endphp
-                        <td class="px-6 py-3 font-semibold {{ $remaining < 0 ? 'text-red-600' : 'text-green-700' }}">
-                            ₱{{ number_format(abs($remaining), 2) }}
-                            {{ $remaining < 0 ? '(over budget)' : '' }}
-                        </td>
-                    </tr>
+                    @if ($rfq->abc)
+                        <tr>
+                            <td colspan="5" class="px-6 py-3 text-right text-sm font-medium text-gray-500">ABC Remaining</td>
+                            @php $remaining = $rfq->abc - $rfq->total_quoted; @endphp
+                            <td class="px-6 py-3 font-semibold {{ $remaining < 0 ? 'text-red-600' : 'text-green-700' }}">
+                                ₱{{ number_format(abs($remaining), 2) }}
+                                {{ $remaining < 0 ? '(over budget)' : '' }}
+                            </td>
+                        </tr>
+                    @endif
                 </tfoot>
             @endif
         </table>
+
+        {{-- Pagination --}}
+        <div x-show="totalPages > 1" class="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+            <span class="text-xs" x-text="'Page ' + page + ' of ' + totalPages"></span>
+            <div class="flex gap-2">
+                <button @click="prevPage" :disabled="page <= 1"
+                        class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    ← Prev
+                </button>
+                <button @click="nextPage" :disabled="page >= totalPages"
+                        class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    Next →
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Notes --}}
@@ -152,4 +207,51 @@
     </div>
 
 </div>
+
+<script>
+function itemSearch(allItems) {
+    return {
+        all: allItems,
+        filtered: allItems,
+        paged: [],
+        search: '',
+        page: 1,
+        perPage: 5,
+        totalPages: 1,
+
+        init() {
+            this.$watch('search', () => {
+                this.page = 1;
+                this.applyFilter();
+            });
+            this.applyFilter();
+        },
+
+        applyFilter() {
+            const q = this.search.toLowerCase().trim();
+            this.filtered = q
+                ? this.all.filter(i =>
+                    i.item_description.toLowerCase().includes(q) ||
+                    i.unit.toLowerCase().includes(q)
+                  )
+                : [...this.all];
+            this.totalPages = Math.max(1, Math.ceil(this.filtered.length / this.perPage));
+            this.paginate();
+        },
+
+        paginate() {
+            const start = (this.page - 1) * this.perPage;
+            this.paged = this.filtered.slice(start, start + this.perPage);
+        },
+
+        nextPage() {
+            if (this.page < this.totalPages) { this.page++; this.paginate(); }
+        },
+
+        prevPage() {
+            if (this.page > 1) { this.page--; this.paginate(); }
+        },
+    };
+}
+</script>
 @endsection

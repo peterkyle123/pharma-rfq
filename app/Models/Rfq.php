@@ -8,22 +8,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Rfq extends Model
 {
-    protected $fillable = [
-        'rfq_number',
-        'agency_id',
-        'date_received',
-        'deadline',
-        'abc',
-        'status',
-        'notes',
-        'philgeps_ref',
-        'attachment_path',
-    ];
+  protected $fillable = [
+    'rfq_number',
+    'agency_id',
+    'date_received',
+    'deadline',
+    'abc',
+    'status',
+    'notes',
+    'philgeps_ref',
+    'attachment_path',
+    'documents',
+];
 
     protected $casts = [
         'date_received' => 'date',
         'deadline'      => 'date',
         'abc'           => 'decimal:2',
+          'documents' => 'array',
     ];
 
     public function agency(): BelongsTo

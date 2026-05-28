@@ -8,12 +8,12 @@
 
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-xl font-semibold text-gray-900">Agencies</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Government agencies you receive RFQs from</p>
+            <h1 class="text-xl font-semibold text-gray-900">Procuring Entity</h1>
+            <p class="text-sm text-gray-500 mt-0.5">RFQ Monitoring for Small Value Procurement and Direct Acqusition</p>
         </div>
         <a href="{{ route('agencies.create') }}"
            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-            + Add Agencya
+            + Add Agency
         </a>
     </div>
 
