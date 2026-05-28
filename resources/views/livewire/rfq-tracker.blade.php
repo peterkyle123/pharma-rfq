@@ -84,6 +84,11 @@
             </button>
         </th>
         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('date_received')" class="flex items-center gap-1 hover:text-gray-900">
+                Days Since Received {{ $sortBy === 'date_received' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
             <button wire:click="sortColumn('status')" class="flex items-center gap-1 hover:text-gray-900">
                 Status {{ $sortBy === 'status' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
             </button>
@@ -115,6 +120,9 @@
                             <span class="text-sm {{ $days < 0 ? 'text-red-600' : ($days <= 1 ? 'text-red-500' : ($days <= 3 ? 'text-amber-600' : 'text-gray-500')) }}">
                                 {{ $days < 0 ? 'Overdue' : ($days === 0 ? 'Today' : ($days === 1 ? '1 day left' : $days . ' days left')) }}
                             </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">
+                            {{ $rfq->days_since_received }} {{ $rfq->days_since_received === 1 ? 'day' : 'days' }}
                         </td>
                         <td class="px-4 py-3">
                             @php
@@ -148,7 +156,7 @@
                     </tr>
                 @if(!in_array($rfq->id, $openRows))
                     <tr wire:click="toggleOpen({{ $rfq->id }})" class="cursor-pointer border-t-0">
-    <td colspan="7" class="text-center text-xs text-gray-400 italic pb-2">
+    <td colspan="8" class="text-center text-xs text-gray-400 italic pb-2">
                             click row to view attachments
                         </td>
                     </tr>
@@ -157,7 +165,7 @@
                     {{-- Document checklist dropdown --}}
                     @if(in_array($rfq->id, $openRows))
                     <tr>
-    <td colspan="7" class="px-6 py-4">
+    <td colspan="8" class="px-6 py-4">
                             <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Documents on hand</p>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 @php
@@ -177,10 +185,11 @@
                                     @endphp
                                     <div class="flex flex-col gap-1">
                                         <label class="flex items-center gap-2 cursor-pointer select-none group">
-                                            <input type="checkbox"
-                                                   @checked($isChecked)
-                                                   wire:click.stop="toggleDoc({{ $rfq->id }}, '{{ $key }}')"
-                                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                       <input type="checkbox"
+                                        @checked($isChecked)
+                                        @disabled(in_array($key, ['notice_of_award', 'ntp']) && $rfq->status === 'Lost')
+                                        wire:click.stop="toggleDoc({{ $rfq->id }}, '{{ $key }}')"
+                                        class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                                             <span class="text-sm text-gray-700 group-hover:text-gray-900">{{ $label }}</span>
                                         </label>
                                         @if($isChecked)

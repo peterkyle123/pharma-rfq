@@ -58,4 +58,8 @@ public static function generateNumber(): string
 
     return sprintf('RFQ-%d-%03d', $year, $next);
 }
+public function getDaysSinceReceivedAttribute(): int
+{
+    return (int) round($this->date_received->startOfDay()->diffInDays(now()->startOfDay()));
+}
 }

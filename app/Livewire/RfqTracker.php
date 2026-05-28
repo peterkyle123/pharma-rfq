@@ -91,23 +91,28 @@ class RfqTracker extends Component
     // When Notice of Award (NOA) is checked, status auto-updates to Awarded.
     // When NOA is unchecked, status reverts to Quoted.
     // -------------------------------------------------------------------------
-    public function toggleDoc(int $rfqId, string $doc): void
-    {
-        $rfq     = Rfq::findOrFail($rfqId);
-        $docs    = $rfq->documents ?? [];
-        $current = $docs[$doc] ?? false;
+public function toggleDoc(int $rfqId, string $doc): void
+{
+    $rfq     = Rfq::findOrFail($rfqId);
+    $docs    = $rfq->documents ?? [];
+    $current = $docs[$doc] ?? false;
 
-        // Toggle: if already set (truthy), clear it; otherwise mark as received with no date yet
-        $docs[$doc] = $current ? false : ['received' => true, 'date' => null];
-        $rfq->update(['documents' => $docs]);
-
-        // Auto-update status when Notice of Award is toggled
-        if ($doc === 'notice_of_award') {
-            $rfq->update([
-                'status' => $current ? 'Quoted' : 'Awarded',
-            ]);
-        }
+    // Prevent checking NOA or NTP if the RFQ is Lost
+    if (in_array($doc, ['notice_of_award', 'ntp']) && $rfq->status === 'Lost') {
+        $this->addError('doc_error_' . $rfqId, 'Cannot mark this document on a Lost RFQ.');
+        return;
     }
+
+    $docs[$doc] = $current ? false : ['received' => true, 'date' => null];
+    $rfq->update(['documents' => $docs]);
+
+    // Auto-update status when Notice of Award is toggled
+    if ($doc === 'notice_of_award') {
+        $rfq->update([
+            'status' => $current ? 'Quoted' : 'Awarded',
+        ]);
+    }
+}
 
     // -------------------------------------------------------------------------
     // Save the date received for a specific document

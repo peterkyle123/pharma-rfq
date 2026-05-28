@@ -33,15 +33,52 @@
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Agency Name</th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Type</th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Region</th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Contact</th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">RFQs</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
+    <tr>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('name')" class="flex items-center gap-1 hover:text-gray-900">
+                Agency Name {{ $sortBy === 'name' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('type')" class="flex items-center gap-1 hover:text-gray-900">
+                Type {{ $sortBy === 'type' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('region')" class="flex items-center gap-1 hover:text-gray-900">
+                Region {{ $sortBy === 'region' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Contact</th>
+        {{-- Headers --}}
+            <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+    <button wire:click="sortColumn('received_count')" class="flex items-center gap-1 hover:text-gray-900">
+        Received {{ $sortBy === 'received_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+    </button>
+</th>
+<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+    <button wire:click="sortColumn('reviewing_count')" class="flex items-center gap-1 hover:text-gray-900">
+        Reviewing {{ $sortBy === 'reviewing_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+    </button>
+</th>
+<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+    <button wire:click="sortColumn('quoted_count')" class="flex items-center gap-1 hover:text-gray-900">
+        Quoted {{ $sortBy === 'quoted_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+    </button>
+</th>
+<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+    <button wire:click="sortColumn('awarded_count')" class="flex items-center gap-1 hover:text-gray-900">
+        Awarded {{ $sortBy === 'awarded_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+    </button>
+</th>
+<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+    <button wire:click="sortColumn('lost_count')" class="flex items-center gap-1 hover:text-gray-900">
+        Lost {{ $sortBy === 'lost_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+    </button>
+</th>
+        <th class="px-4 py-3"></th>
+    </tr>
+</thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse ($agencies as $agency)
                     <tr class="hover:bg-gray-50 transition">
@@ -53,11 +90,36 @@
                             <p class="text-xs text-gray-400">{{ $agency->contact_email ?? '' }}</p>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="bg-blue-50 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
-                                {{ $agency->rfqs_count }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-right">
+    <span class="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
+        {{ $agency->rfqs_count }}
+    </span>
+</td>
+                    <td class="px-4 py-3">
+                        <span class="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                            {{ $agency->received_count }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                            {{ $agency->reviewing_count }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="bg-green-50 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                            {{ $agency->quoted_count }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="bg-teal-50 text-teal-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                            {{ $agency->awarded_count }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="bg-red-50 text-red-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                            {{ $agency->lost_count }}
+                        </span>
+                    </td>
+                <td class="px-4 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <a href="{{ route('agencies.edit', $agency) }}"
                                    class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition">
@@ -73,7 +135,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400">
+                        <td colspan="11" class="px-4 py-12 text-center text-sm text-gray-400">
                             No agencies found. Add your first one!
                         </td>
                     </tr>
