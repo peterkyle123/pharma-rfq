@@ -44,7 +44,7 @@
             <input wire:model.live.debounce.300ms="search"
                    type="text"
                    placeholder="Search agency or RFQ no..."
-                   class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                   class="w-full pl-4 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         @foreach (['all', 'Received', 'Reviewing', 'Quoted', 'Awarded', 'Lost'] as $tab)
             <button wire:click="setStatus('{{ $tab }}')"
@@ -60,29 +60,37 @@
     {{-- Table --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-visible">
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                        <button wire:click="sortBy('rfq_number')">
-                            RFQ no. {{ $sortBy === 'rfq_number' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-                        </button>
-                    </th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Agency</th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Items</th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                        <button wire:click="sortBy('abc')">
-                            ABC (₱) {{ $sortBy === 'abc' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-                        </button>
-                    </th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                        <button wire:click="sortBy('deadline')">
-                            Deadline {{ $sortBy === 'deadline' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-                        </button>
-                    </th>
-                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Status</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
+<thead class="bg-gray-50 border-b border-gray-200">
+    <tr>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('rfq_number')" class="flex items-center gap-1 hover:text-gray-900">
+                RFQ no. {{ $sortBy === 'rfq_number' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('agency_id')" class="flex items-center gap-1 hover:text-gray-900">
+                Agency {{ $sortBy === 'agency_id' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Items</th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('abc')" class="flex items-center gap-1 hover:text-gray-900">
+                ABC (₱) {{ $sortBy === 'abc' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('deadline')" class="flex items-center gap-1 hover:text-gray-900">
+                Deadline {{ $sortBy === 'deadline' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+            <button wire:click="sortColumn('status')" class="flex items-center gap-1 hover:text-gray-900">
+                Status {{ $sortBy === 'status' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+            </button>
+        </th>
+        <th class="px-4 py-3"></th>
+    </tr>
+</thead>
 
             @forelse ($rfqs as $rfq)
                 <tbody wire:key="rfq-{{ $rfq->id }}" class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">

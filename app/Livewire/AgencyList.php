@@ -19,7 +19,13 @@ class AgencyList extends Component
 
 public function delete(int $id): void
 {
-    $agency = Agency::findOrFail($id);
+    $agency = Agency::withCount('rfqs')->findOrFail($id);
+
+    if ($agency->rfqs_count > 0) {
+        session()->flash('error', "Cannot delete {$agency->name} — it has {$agency->rfqs_count} RFQ(s) attached.");
+        return;
+    }
+
     $agency->delete();
     session()->flash('message', "Agency {$agency->name} deleted.");
     $this->resetPage();

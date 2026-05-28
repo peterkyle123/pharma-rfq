@@ -5,6 +5,12 @@
         {{ session('message') }}
     </div>
 @endif
+@if (session()->has('error'))
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+         class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+        {{ session('error') }}
+    </div>
+@endif
 
     <div class="flex items-center justify-between mb-6">
         <div>

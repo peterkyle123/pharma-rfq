@@ -9,7 +9,9 @@ use Livewire\Component;
 
 class RfqForm extends Component
 {
-    // RFQ fields
+    // -------------------------------------------------------------------------
+    // RFQ header fields — bound to the form inputs via wire:model
+    // -------------------------------------------------------------------------
     public string $rfq_number    = '';
     public string $agency_id     = '';
     public string $date_received = '';
@@ -18,19 +20,29 @@ class RfqForm extends Component
     public string $status        = 'Received';
     public string $notes         = '';
     public string $philgeps_ref  = '';
-    public array  $items         = [
+
+    // Line items array — each entry is [item_description, unit, quantity, unit_price]
+    public array $items = [
         ['item_description' => '', 'unit' => '', 'quantity' => '', 'unit_price' => ''],
     ];
+
+    // null = create mode, set to an ID = edit mode
     public ?int $rfqId = null;
 
-    // Search & pagination
+    // -------------------------------------------------------------------------
+    // Item search & pagination state
+    // -------------------------------------------------------------------------
     public string $itemSearch   = '';
     public int    $itemsPerPage = 5;
     public int    $itemPage     = 1;
 
+    // -------------------------------------------------------------------------
+    // Mount — load existing RFQ data when editing, or set defaults when creating
+    // -------------------------------------------------------------------------
     public function mount(?int $rfqId = null): void
     {
         if ($rfqId) {
+            // Edit mode: populate all fields from the existing RFQ
             $rfq = Rfq::with('items')->findOrFail($rfqId);
             $this->rfqId         = $rfq->id;
             $this->rfq_number    = $rfq->rfq_number;
@@ -41,7 +53,9 @@ class RfqForm extends Component
             $this->status        = $rfq->status;
             $this->notes         = $rfq->notes ?? '';
             $this->philgeps_ref  = $rfq->philgeps_ref ?? '';
-            // array_values() ensures clean 0-based integer keys from the start
+
+            // array_values() ensures clean 0-based integer keys
+            // which is required for wire:model binding to work correctly
             $this->items = array_values($rfq->items->map(fn($i) => [
                 'item_description' => $i->item_description,
                 'unit'             => $i->unit,
@@ -49,66 +63,97 @@ class RfqForm extends Component
                 'unit_price'       => (string) ($i->unit_price ?? ''),
             ])->toArray());
         } else {
+            // Create mode: default date received to today
             $this->date_received = now()->format('Y-m-d');
         }
     }
 
-   public function addItem(): void
-{
-    $hasEmpty = collect($this->items)->some(
-        fn($item) => trim($item['item_description'] ?? '') === '' ||
-                     trim($item['unit'] ?? '') === '' ||
-                     trim($item['quantity'] ?? '') === ''
-    );
+    // -------------------------------------------------------------------------
+    // Add a new blank item row
+    // Prevents adding if any existing row still has empty required fields
+    // -------------------------------------------------------------------------
+    public function addItem(): void
+    {
+        $hasEmpty = collect($this->items)->some(
+            fn($item) => trim($item['item_description'] ?? '') === '' ||
+                         trim($item['unit'] ?? '') === '' ||
+                         trim($item['quantity'] ?? '') === ''
+        );
 
-    if ($hasEmpty) {
-        $this->addError('items_empty', 'Please fill in all existing item fields before adding a new one.');
-        return;
-    }
+        if ($hasEmpty) {
+            $this->addError('items_empty', 'Please fill in all existing item fields before adding a new one.');
+            return;
+        }
 
-    $this->items   = array_values($this->items);
-    $this->items[] = ['item_description' => '', 'unit' => '', 'quantity' => '', 'unit_price' => ''];
-    $this->itemPage = $this->totalItemPages;
-}
+        // Re-index before appending to keep keys sequential
+        $this->items   = array_values($this->items);
+        $this->items[] = ['item_description' => '', 'unit' => '', 'quantity' => '', 'unit_price' => ''];
 
-public function removeItem(int $index): void
-{
-    array_splice($this->items, $index, 1);
-    if ($this->itemPage > $this->totalItemPages) {
+        // Jump to the last page so the new blank row is immediately visible
         $this->itemPage = $this->totalItemPages;
     }
-}
 
-    // --- Computed properties (preserve real keys so wire:model binds correctly) ---
+    // -------------------------------------------------------------------------
+    // Remove an item row by its index
+    // Clamps the current page if the last page becomes empty after removal
+    // -------------------------------------------------------------------------
+    public function removeItem(int $index): void
+    {
+        array_splice($this->items, $index, 1);
 
-public function getFilteredItemsProperty(): array
-{
-    // Returns [visualIndex => item] always 0-based, no key tricks
-    $filtered = [];
-    foreach ($this->items as $i => $item) {
-        $descriptionEmpty = trim($item['item_description'] ?? '') === '';
-        if (
-            empty($this->itemSearch) ||
-            $descriptionEmpty ||
-            str_contains(strtolower($item['item_description'] ?? ''), strtolower($this->itemSearch)) ||
-            str_contains(strtolower($item['unit'] ?? ''), strtolower($this->itemSearch))
-        ) {
-            $filtered[$i] = $item;
+        if ($this->itemPage > $this->totalItemPages) {
+            $this->itemPage = $this->totalItemPages;
         }
     }
-    return $filtered;
-}
 
- public function getPagedItemsProperty(): array
-{
-    return array_slice($this->filteredItems, ($this->itemPage - 1) * $this->itemsPerPage, $this->itemsPerPage, true);
-}
+    // -------------------------------------------------------------------------
+    // Computed: filtered items
+    // Filters by description or unit based on the search term.
+    // Blank rows are always shown so they can be filled in or removed.
+    // Keys are preserved so wire:model binds to the correct $this->items index.
+    // -------------------------------------------------------------------------
+    public function getFilteredItemsProperty(): array
+    {
+        $filtered = [];
+        foreach ($this->items as $i => $item) {
+            $descriptionEmpty = trim($item['item_description'] ?? '') === '';
+            if (
+                empty($this->itemSearch) ||
+                $descriptionEmpty ||
+                str_contains(strtolower($item['item_description'] ?? ''), strtolower($this->itemSearch)) ||
+                str_contains(strtolower($item['unit'] ?? ''), strtolower($this->itemSearch))
+            ) {
+                $filtered[$i] = $item;
+            }
+        }
+        return $filtered;
+    }
 
+    // -------------------------------------------------------------------------
+    // Computed: current page of filtered items
+    // preserve_keys=true keeps the original $this->items index as the key
+    // so wire:model="items.{{ $index }}.field" always targets the right row
+    // -------------------------------------------------------------------------
+    public function getPagedItemsProperty(): array
+    {
+        return array_slice(
+            $this->filteredItems,
+            ($this->itemPage - 1) * $this->itemsPerPage,
+            $this->itemsPerPage,
+            true // preserve keys
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Computed: total number of pages based on filtered item count
+    // Always at least 1 so the pagination never breaks on empty results
+    // -------------------------------------------------------------------------
     public function getTotalItemPagesProperty(): int
     {
         return max(1, (int) ceil(count($this->filteredItems) / $this->itemsPerPage));
     }
 
+    // Pagination controls
     public function itemNextPage(): void
     {
         if ($this->itemPage < $this->totalItemPages) $this->itemPage++;
@@ -119,15 +164,38 @@ public function getFilteredItemsProperty(): array
         if ($this->itemPage > 1) $this->itemPage--;
     }
 
+    // Reset to page 1 whenever the search term changes
     public function updatedItemSearch(): void
     {
         $this->itemPage = 1;
     }
 
-    // --- Save ---
-
+    // -------------------------------------------------------------------------
+    // Save — handles both create and update
+    // -------------------------------------------------------------------------
     public function save(): void
     {
+        // --- Status trappings ---
+
+        // A Lost RFQ is locked — its status cannot be changed to anything else
+        if ($this->rfqId) {
+            $current = Rfq::findOrFail($this->rfqId);
+            if ($current->status === 'Lost' && $this->status !== 'Lost') {
+                $this->addError('status', 'A Lost RFQ cannot be changed to another status.');
+                return;
+            }
+        }
+
+        // Status can only be set to Quoted if at least one item has a unit price
+        if ($this->status === 'Quoted') {
+            $hasAnyPriced = collect($this->items)->some(fn($item) => !empty($item['unit_price']));
+            if (!$hasAnyPriced) {
+                $this->addError('status', 'Status can only be set to Quoted when at least one item has a unit price.');
+                return;
+            }
+        }
+
+        // --- Validation ---
         $this->validate([
             'agency_id'                => 'required|exists:agencies,id',
             'date_received'            => 'required|date',
@@ -142,6 +210,7 @@ public function getFilteredItemsProperty(): array
             'items.*.unit_price'       => 'nullable|numeric|min:0',
         ]);
 
+        // --- Prepare data ---
         $data = [
             'agency_id'     => $this->agency_id,
             'date_received' => $this->date_received,
@@ -153,34 +222,49 @@ public function getFilteredItemsProperty(): array
         ];
 
         if ($this->rfqId) {
+            // Update existing RFQ — delete old items and re-insert below
             $rfq = Rfq::findOrFail($this->rfqId);
             $rfq->update($data);
             $rfq->items()->delete();
         } else {
+            // Create new RFQ — auto-generate number if left blank
             $data['rfq_number'] = $this->rfq_number ?: Rfq::generateNumber();
             $rfq = Rfq::create($data);
         }
 
+        // --- Re-insert line items ---
         foreach ($this->items as $item) {
             $rfq->items()->create([
                 'item_description' => $item['item_description'],
                 'unit'             => $item['unit'],
                 'quantity'         => $item['quantity'],
                 'unit_price'       => $item['unit_price'] ?: null,
+                // Auto-calculate total price if both fields are present
                 'total_price'      => ($item['unit_price'] && $item['quantity'])
                                         ? $item['unit_price'] * $item['quantity']
                                         : null,
             ]);
         }
+
+        // --- Auto-update status based on deadline and pricing ---
         $allPriced = collect($this->items)->every(fn($item) => !empty($item['unit_price']));
-        $rfq->update(['status' => $allPriced ? 'Quoted' : 'Received']);
+        $isOverdue = now()->startOfDay()->gt(\Carbon\Carbon::parse($this->deadline)->startOfDay());
+
+        if ($isOverdue) {
+            // Deadline has passed — mark as Lost regardless of pricing
+            $rfq->update(['status' => 'Lost']);
+        } elseif (in_array($rfq->status, ['Received', 'Quoted'])) {
+            // Auto-promote to Quoted if all items are priced, otherwise keep as Received
+            $rfq->update(['status' => $allPriced ? 'Quoted' : 'Received']);
+        }
 
         session()->flash('message', "RFQ {$rfq->rfq_number} saved successfully.");
-        $this->redirect(route('rfqs.show', $rfq));
-        session()->flash('message', "RFQ {$rfq->rfq_number} saved successfully.");
-        $this->redirect(route('rfqs.show', $rfq));
+        $this->redirect(route('rfqs.index'));
     }
 
+    // -------------------------------------------------------------------------
+    // Render — passes all necessary data to the blade view
+    // -------------------------------------------------------------------------
     public function render()
     {
         return view('livewire.rfq-form', [

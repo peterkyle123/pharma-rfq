@@ -47,11 +47,15 @@ class Rfq extends Model
     {
         return $this->items->sum('total_price');
     }
+public static function generateNumber(): string
+{
+    $year = now()->year;
+    $last = static::whereYear('created_at', $year)
+        ->orderByRaw('CAST(SUBSTRING_INDEX(rfq_number, "-", -1) AS UNSIGNED) DESC')
+        ->value('rfq_number');
 
-    public static function generateNumber(): string
-    {
-        $year  = now()->year;
-        $count = static::whereYear('created_at', $year)->count() + 1;
-        return sprintf('RFQ-%d-%03d', $year, $count);
-    }
+    $next = $last ? (int) explode('-', $last)[2] + 1 : 1;
+
+    return sprintf('RFQ-%d-%03d', $year, $next);
+}
 }

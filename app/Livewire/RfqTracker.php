@@ -10,27 +10,48 @@ class RfqTracker extends Component
 {
     use WithPagination;
 
+    // -------------------------------------------------------------------------
+    // Filter, sort, and UI state
+    // -------------------------------------------------------------------------
+
+    // Search term for filtering by RFQ number or agency name
     public string $search  = '';
+
+    // Active status filter tab — 'all' shows everything
     public string $status  = 'all';
+
+    // Column currently being sorted and its direction
     public string $sortBy  = 'deadline';
     public string $sortDir = 'asc';
-    public array  $openRows = [];
 
+    // Tracks which RFQ rows have their document checklist dropdown open
+    public array $openRows = [];
+
+    // Persist search and status filters in the URL query string
     protected $queryString = [
         'search' => ['except' => ''],
         'status' => ['except' => 'all'],
     ];
 
+    // Reset to page 1 whenever search or status filter changes
     public function updatedSearch(): void { $this->resetPage(); }
     public function updatedStatus(): void { $this->resetPage(); }
 
+    // -------------------------------------------------------------------------
+    // Filter by status tab
+    // -------------------------------------------------------------------------
     public function setStatus(string $status): void
     {
         $this->status = $status;
         $this->resetPage();
     }
 
-    public function sortBy(string $column): void
+    // -------------------------------------------------------------------------
+    // Column sorting
+    // Toggles direction if the same column is clicked again,
+    // otherwise switches to the new column with ascending order
+    // -------------------------------------------------------------------------
+    public function sortColumn(string $column): void
     {
         if ($this->sortBy === $column) {
             $this->sortDir = $this->sortDir === 'asc' ? 'desc' : 'asc';
@@ -40,15 +61,24 @@ class RfqTracker extends Component
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Toggle the document checklist dropdown for a specific RFQ row
+    // Adds to openRows to open, removes to close
+    // -------------------------------------------------------------------------
     public function toggleOpen(int $rfqId): void
     {
         if (in_array($rfqId, $this->openRows)) {
-            $this->openRows = array_values(array_filter($this->openRows, fn($id) => $id !== $rfqId));
+            $this->openRows = array_values(
+                array_filter($this->openRows, fn($id) => $id !== $rfqId)
+            );
         } else {
             $this->openRows[] = $rfqId;
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Manually update the status of an RFQ from the tracker
+    // -------------------------------------------------------------------------
     public function updateStatus(int $rfqId, string $status): void
     {
         $rfq = Rfq::findOrFail($rfqId);
@@ -56,30 +86,46 @@ class RfqTracker extends Component
         session()->flash('message', "RFQ #{$rfq->rfq_number} updated to {$status}.");
     }
 
-public function toggleDoc(int $rfqId, string $doc): void
-{
-    $rfq     = Rfq::findOrFail($rfqId);
-    $docs    = $rfq->documents ?? [];
-    $current = $docs[$doc] ?? false;
-    $docs[$doc] = $current ? false : ['received' => true, 'date' => null];
-    $rfq->update(['documents' => $docs]);
+    // -------------------------------------------------------------------------
+    // Toggle a document checkbox on/off for a given RFQ
+    // When Notice of Award (NOA) is checked, status auto-updates to Awarded.
+    // When NOA is unchecked, status reverts to Quoted.
+    // -------------------------------------------------------------------------
+    public function toggleDoc(int $rfqId, string $doc): void
+    {
+        $rfq     = Rfq::findOrFail($rfqId);
+        $docs    = $rfq->documents ?? [];
+        $current = $docs[$doc] ?? false;
 
-    // Auto-update status based on NOA
-    if ($doc === 'notice_of_award') {
-        $rfq->update([
-            'status' => $current ? 'Quoted' : 'Awarded',
-        ]);
+        // Toggle: if already set (truthy), clear it; otherwise mark as received with no date yet
+        $docs[$doc] = $current ? false : ['received' => true, 'date' => null];
+        $rfq->update(['documents' => $docs]);
+
+        // Auto-update status when Notice of Award is toggled
+        if ($doc === 'notice_of_award') {
+            $rfq->update([
+                'status' => $current ? 'Quoted' : 'Awarded',
+            ]);
+        }
     }
-}
 
+    // -------------------------------------------------------------------------
+    // Save the date received for a specific document
+    // Called when the user picks a date on a checked document
+    // -------------------------------------------------------------------------
     public function setDocDate(int $rfqId, string $doc, string $date): void
     {
         $rfq  = Rfq::findOrFail($rfqId);
         $docs = $rfq->documents ?? [];
+
+        // Keep received flag true and update only the date
         $docs[$doc] = ['received' => true, 'date' => $date];
         $rfq->update(['documents' => $docs]);
     }
 
+    // -------------------------------------------------------------------------
+    // Computed metrics for the dashboard cards at the top of the tracker
+    // -------------------------------------------------------------------------
     public function getMetricsProperty(): array
     {
         $all     = Rfq::count();
@@ -91,23 +137,41 @@ public function toggleDoc(int $rfqId, string $doc): void
             'total'    => $all,
             'pending'  => $pending,
             'quoted'   => $quoted,
+            // Win rate = awarded out of all that reached the quoting stage
             'win_rate' => $quoted > 0 ? round(($awarded / $quoted) * 100) : 0,
         ];
     }
 
+    // -------------------------------------------------------------------------
+    // Render — builds the paginated, filtered, sorted RFQ list
+    // -------------------------------------------------------------------------
     public function render()
     {
         $rfqs = Rfq::with('agency', 'items')
+
+            // Filter by search term — matches RFQ number or agency name
             ->when($this->search, function ($q) {
                 $q->where('rfq_number', 'like', "%{$this->search}%")
                   ->orWhereHas('agency', fn($a) =>
                       $a->where('name', 'like', "%{$this->search}%")
                   );
             })
+
+            // Filter by status tab if not showing all
             ->when($this->status !== 'all', fn($q) =>
                 $q->where('status', $this->status)
             )
-            ->orderBy($this->sortBy, $this->sortDir)
+
+            // Sorting — agency requires a join since it's a relationship,
+            // all other columns can be sorted directly on the rfqs table
+            ->when($this->sortBy === 'agency_id', function ($q) {
+                $q->join('agencies', 'rfqs.agency_id', '=', 'agencies.id')
+                  ->orderBy('agencies.name', $this->sortDir)
+                  ->select('rfqs.*');
+            }, function ($q) {
+                $q->orderBy($this->sortBy, $this->sortDir);
+            })
+
             ->paginate(15);
 
         return view('livewire.rfq-tracker', [

@@ -67,7 +67,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
                     <select wire:model="status"
-                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        @disabled($rfqId && $status === 'Lost')
+        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
                         @foreach (['Received', 'Reviewing', 'Quoted', 'Awarded', 'Lost'] as $s)
                             <option value="{{ $s }}">{{ $s }}</option>
                         @endforeach
