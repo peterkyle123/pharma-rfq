@@ -131,57 +131,61 @@ public function toggleDoc(int $rfqId, string $doc): void
     // -------------------------------------------------------------------------
     // Computed metrics for the dashboard cards at the top of the tracker
     // -------------------------------------------------------------------------
-    public function getMetricsProperty(): array
-    {
-        $all     = Rfq::count();
-        $pending = Rfq::whereIn('status', ['Received', 'Reviewing'])->count();
-        $quoted  = Rfq::whereIn('status', ['Quoted', 'Awarded', 'Lost'])->count();
-        $awarded = Rfq::where('status', 'Awarded')->count();
+public function getMetricsProperty(): array
+{
+    $all     = Rfq::count();
+    $pending = Rfq::whereIn('status', ['Received', 'Reviewing'])->count();
+    $quoted  = Rfq::whereIn('status', ['Quoted', 'Awarded', 'Lost'])->count();
+    $awarded = Rfq::where('status', 'Awarded')->count();
 
-        return [
-            'total'    => $all,
-            'pending'  => $pending,
-            'quoted'   => $quoted,
-            // Win rate = awarded out of all that reached the quoting stage
-            'win_rate' => $quoted > 0 ? round(($awarded / $quoted) * 100) : 0,
-        ];
-    }
-
+    return [
+        'total'    => $all,
+        'pending'  => $pending,
+        'quoted'   => $quoted,
+        'awarded'  => $awarded,
+        'win_rate' => $quoted > 0 ? round(($awarded / $quoted) * 100) : 0,
+    ];
+}
     // -------------------------------------------------------------------------
     // Render — builds the paginated, filtered, sorted RFQ list
     // -------------------------------------------------------------------------
     public function render()
-    {
-        $rfqs = Rfq::with('agency', 'items')
+{
+    $rfqs = Rfq::with('agency', 'items')
 
-            // Filter by search term — matches RFQ number or agency name
-            ->when($this->search, function ($q) {
-                $q->where('rfq_number', 'like', "%{$this->search}%")
-                  ->orWhereHas('agency', fn($a) =>
-                      $a->where('name', 'like', "%{$this->search}%")
-                  );
-            })
+        // Filter by search term — matches RFQ number or agency name
+        ->when($this->search, function ($q) {
+            $q->where('rfq_number', 'like', "%{$this->search}%")
+              ->orWhereHas('agency', fn($a) =>
+                  $a->where('name', 'like', "%{$this->search}%")
+              );
+        })
 
-            // Filter by status tab if not showing all
-            ->when($this->status !== 'all', fn($q) =>
-                $q->where('status', $this->status)
-            )
+        // Filter by status tab if not showing all
+        ->when($this->status !== 'all', fn($q) =>
+            $q->where('status', $this->status)
+        )
 
-            // Sorting — agency requires a join since it's a relationship,
-            // all other columns can be sorted directly on the rfqs table
-            ->when($this->sortBy === 'agency_id', function ($q) {
-                $q->join('agencies', 'rfqs.agency_id', '=', 'agencies.id')
-                  ->orderBy('agencies.name', $this->sortDir)
-                  ->select('rfqs.*');
-            }, function ($q) {
-                $q->orderBy($this->sortBy, $this->sortDir);
-            })
+        // Sorting — agency requires a join, total_quoted requires a subquery sum,
+        // all other columns can be sorted directly on the rfqs table
+        ->when($this->sortBy === 'agency_id', function ($q) {
+            $q->join('agencies', 'rfqs.agency_id', '=', 'agencies.id')
+              ->orderBy('agencies.name', $this->sortDir)
+              ->select('rfqs.*');
+        })
+        ->when($this->sortBy === 'total_quoted', function ($q) {
+            $q->withSum('items', 'total_price')
+              ->orderBy('items_sum_total_price', $this->sortDir);
+        })
+        ->when(!in_array($this->sortBy, ['agency_id', 'total_quoted']), function ($q) {
+            $q->orderBy($this->sortBy, $this->sortDir);
+        })
 
-            ->paginate(15);
+        ->paginate(15);
 
-        return view('livewire.rfq-tracker', [
-            'rfqs'    => $rfqs,
-            'metrics' => $this->metrics,
-        ]);
-    }
+    return view('livewire.rfq-tracker', [
+        'rfqs'    => $rfqs,
+        'metrics' => $this->metrics,
+    ]);
+}
 }

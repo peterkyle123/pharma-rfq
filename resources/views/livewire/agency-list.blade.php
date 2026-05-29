@@ -40,7 +40,7 @@
             </button>
         </th>
         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-            <button wire:click="sortColumn('type')" class="flex items-center gap-1 hover:text-gray-900">
+            <button wire:click="sortColumn('type')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
                 Type {{ $sortBy === 'type' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
             </button>
         </th>
@@ -50,32 +50,38 @@
             </button>
         </th>
         <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Contact</th>
+        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
+    <button wire:click="sortColumn('rfqs_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+        Total RFQs {{ $sortBy === 'rfqs_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+    </button>
+</th>
         {{-- Headers --}}
             <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('received_count')" class="flex items-center gap-1 hover:text-gray-900">
+    <button wire:click="sortColumn('received_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
         Received {{ $sortBy === 'received_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
     </button>
 </th>
 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('reviewing_count')" class="flex items-center gap-1 hover:text-gray-900">
+    <button wire:click="sortColumn('reviewing_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
         Reviewing {{ $sortBy === 'reviewing_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
     </button>
 </th>
 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('quoted_count')" class="flex items-center gap-1 hover:text-gray-900">
+    <button wire:click="sortColumn('quoted_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
         Quoted {{ $sortBy === 'quoted_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
     </button>
 </th>
 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('awarded_count')" class="flex items-center gap-1 hover:text-gray-900">
+    <button wire:click="sortColumn('awarded_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
         Awarded {{ $sortBy === 'awarded_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
     </button>
 </th>
 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('lost_count')" class="flex items-center gap-1 hover:text-gray-900">
+    <button wire:click="sortColumn('lost_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
         Lost {{ $sortBy === 'lost_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
     </button>
 </th>
+
         <th class="px-4 py-3"></th>
     </tr>
 </thead>

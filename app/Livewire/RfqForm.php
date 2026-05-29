@@ -37,6 +37,12 @@ class RfqForm extends Component
     public int    $itemPage     = 1;
 
     // -------------------------------------------------------------------------
+    // Paste items state
+    // -------------------------------------------------------------------------
+    public bool   $showPasteArea = false;
+    public string $pasteText     = '';
+
+    // -------------------------------------------------------------------------
     // Mount — load existing RFQ data when editing, or set defaults when creating
     // -------------------------------------------------------------------------
     public function mount(?int $rfqId = null): void
@@ -48,7 +54,8 @@ class RfqForm extends Component
             $this->rfq_number    = $rfq->rfq_number;
             $this->agency_id     = (string) $rfq->agency_id;
             $this->date_received = $rfq->date_received->format('Y-m-d');
-            $this->deadline      = $rfq->deadline->format('Y-m-d');
+            // Deadline is nullable — only format if present
+            $this->deadline      = $rfq->deadline ? $rfq->deadline->format('Y-m-d') : '';
             $this->abc           = (string) ($rfq->abc ?? '');
             $this->status        = $rfq->status;
             $this->notes         = $rfq->notes ?? '';
@@ -103,6 +110,47 @@ class RfqForm extends Component
 
         if ($this->itemPage > $this->totalItemPages) {
             $this->itemPage = $this->totalItemPages;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Parse pasted text into line items
+    // Supports tab-separated (Excel) and comma-separated formats
+    // Column order: Description, Unit, Quantity, Unit Price (optional)
+    // -------------------------------------------------------------------------
+    public function parsePastedItems(): void
+    {
+        $lines = preg_split('/\r\n|\r|\n/', trim($this->pasteText));
+        $lines = array_filter($lines, fn($line) => trim($line) !== '');
+        $added = 0;
+
+        foreach ($lines as $line) {
+            // Auto-detect separator: tab (Excel) or comma
+            $separator = str_contains($line, "\t") ? "\t" : ",";
+            $cols      = array_map('trim', explode($separator, $line));
+
+            // Skip rows that don't have at least description, unit, and quantity
+            if (count($cols) < 3) continue;
+
+            $this->items[] = [
+                'item_description' => $cols[0] ?? '',
+                'unit'             => $cols[1] ?? '',
+                'quantity'         => $cols[2] ?? '',
+                'unit_price'       => $cols[3] ?? '',
+            ];
+            $added++;
+        }
+
+        // Re-index to keep keys clean after appending
+        $this->items = array_values($this->items);
+
+        if ($added > 0) {
+            // Close the paste area and jump to last page to show imported rows
+            $this->pasteText     = '';
+            $this->showPasteArea = false;
+            $this->itemPage      = $this->totalItemPages;
+        } else {
+            $this->addError('pasteText', 'Could not parse any items. Each line needs at least: Description, Unit, Quantity.');
         }
     }
 
@@ -199,7 +247,7 @@ class RfqForm extends Component
         $this->validate([
             'agency_id'                => 'required|exists:agencies,id',
             'date_received'            => 'required|date',
-            'deadline'                 => 'required|date|after_or_equal:date_received',
+            'deadline'                 => 'nullable|date|after_or_equal:date_received',
             'abc'                      => 'nullable|numeric|min:0',
             'status'                   => 'required|in:Received,Reviewing,Quoted,Awarded,Lost',
             'notes'                    => 'nullable|string',
@@ -214,7 +262,7 @@ class RfqForm extends Component
         $data = [
             'agency_id'     => $this->agency_id,
             'date_received' => $this->date_received,
-            'deadline'      => $this->deadline,
+            'deadline'      => $this->deadline ?: null,
             'abc'           => $this->abc ?: null,
             'status'        => $this->status,
             'notes'         => $this->notes ?: null,
@@ -248,7 +296,9 @@ class RfqForm extends Component
 
         // --- Auto-update status based on deadline and pricing ---
         $allPriced = collect($this->items)->every(fn($item) => !empty($item['unit_price']));
-        $isOverdue = now()->startOfDay()->gt(\Carbon\Carbon::parse($this->deadline)->startOfDay());
+
+        // Only check overdue if a deadline is set
+        $isOverdue = $this->deadline && now()->startOfDay()->gt(\Carbon\Carbon::parse($this->deadline)->startOfDay());
 
         if ($isOverdue) {
             // Deadline has passed — mark as Lost regardless of pricing

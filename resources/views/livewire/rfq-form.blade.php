@@ -54,9 +54,9 @@
                     @error('date_received') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- Deadline: required, must be on or after date received --}}
+                {{-- Deadline: nullable, must be on or after date received if provided --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Deadline <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
                     <input type="date" wire:model="deadline"
                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     @error('deadline') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -108,7 +108,7 @@
         {{-- ------------------------------------------------------------------ --}}
         <div class="bg-white rounded-xl border border-gray-200 mb-4 overflow-hidden">
 
-            {{-- Header: item count badge + Add Item button --}}
+            {{-- Header: item count badge + Add Item + Paste Items buttons --}}
             <div class="px-6 py-4 border-b border-gray-100">
                 <div class="flex items-center justify-between">
                     <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
@@ -118,17 +118,48 @@
                             {{ count($filteredItems) }}{{ count($filteredItems) !== $totalItemCount ? ' of ' . $totalItemCount : '' }}
                         </span>
                     </p>
-                    {{-- Blocked if any existing row has unfilled required fields --}}
-                    <button type="button" wire:click="addItem"
-                            class="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg transition">
-                        + Add Item
-                    </button>
+                    <div class="flex items-center gap-2">
+                        {{-- Blocked if any existing row has unfilled required fields --}}
+                        <button type="button" wire:click="addItem"
+                                class="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg transition">
+                            + Add Item
+                        </button>
+                        {{-- Toggle inline paste area --}}
+                        <button type="button" wire:click="$toggle('showPasteArea')"
+                                class="text-xs text-green-600 hover:text-green-800 border border-green-200 px-3 py-1.5 rounded-lg transition">
+                            {{ $showPasteArea ? '✕ Cancel Paste' : '↓ Paste Items' }}
+                        </button>
+                    </div>
                 </div>
                 {{-- Shown when user tries to add an item before filling existing ones --}}
                 @error('items_empty')
                     <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
                 @enderror
             </div>
+
+            {{-- Inline paste area — shown when Paste Items is toggled --}}
+            @if($showPasteArea)
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <p class="text-xs text-gray-500 mb-2">
+                    Paste from Excel or text. Column order:
+                    <span class="font-mono bg-white border border-gray-200 px-1 rounded">
+                        Description · Unit · Quantity · Unit Price (optional)
+                    </span>
+                </p>
+                <textarea wire:model="pasteText"
+                          rows="4"
+                          placeholder="Amoxicillin 500mg&#9;tablet&#9;100&#9;5.50"
+                          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-2">
+                </textarea>
+                @error('pasteText')
+                    <p class="text-red-500 text-xs mb-2">{{ $message }}</p>
+                @enderror
+                <button type="button" wire:click="parsePastedItems"
+                        class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition">
+                    Import Items
+                </button>
+            </div>
+            @endif
 
             {{-- Item search bar — filters visible rows by description or unit --}}
             <div class="px-6 py-3 border-b border-gray-100">
@@ -203,7 +234,7 @@
                                 @error("items.{$index}.unit_price") <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </td>
 
-                            {{-- Total: computed client-side from unit price × quantity --}}
+                            {{-- Total: computed from unit price × quantity --}}
                             <td class="px-4 py-2 text-gray-500 text-sm">
                                 @php
                                     $total = ($item['unit_price'] && $item['quantity'])
