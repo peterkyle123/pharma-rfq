@@ -12,13 +12,12 @@
 
     {{-- Navbar --}}
     <nav class="bg-white border-b border-gray-100 px-6 py-0 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-6xl mx-auto flex items-center justify-between h-14">
+        <div class="max-w-7xl mx-auto flex items-center justify-between h-14">
 
             {{-- Logo --}}
             <a href="{{ route('rfqs.index') }}" class="flex items-center gap-2.5 text-blue-600 font-bold text-base">
                 <div class="bg-blue-600 text-white rounded-lg w-7 h-7 flex items-center justify-center text-sm">💊</div>
                 <span>RFQTracker</span>
-                
             </a>
 
             {{-- Nav links --}}
@@ -39,7 +38,7 @@
     </nav>
 
     {{-- Main content --}}
-    <main class="max-w-6xl mx-auto px-6 py-8">
+    <main class="max-w-7xl mx-auto px-6 py-8">
         @yield('content')
         {{ $slot ?? '' }}
     </main>

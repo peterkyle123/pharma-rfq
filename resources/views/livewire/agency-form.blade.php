@@ -24,14 +24,20 @@
                     @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
-                <div>
+               <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Type <span class="text-red-500">*</span></label>
-                    <select wire:model="type"
+                    <select wire:model.live="type"
                             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         @foreach (['Government Hospital', 'LGU', 'National Agency', 'SUC', 'GOCC', 'Other'] as $t)
                             <option value="{{ $t }}">{{ $t }}</option>
                         @endforeach
                     </select>
+                    @if($type === 'Other')
+                        <input type="text" wire:model="customType"
+                            placeholder="Please specify..."
+                            class="mt-2 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        @error('customType') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @endif
                     @error('type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 

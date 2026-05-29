@@ -31,64 +31,66 @@
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+   <table class="w-full text-sm" style="table-layout: fixed">
             <thead class="bg-gray-50 border-b border-gray-200">
-    <tr>
-        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-            <button wire:click="sortColumn('name')" class="flex items-center gap-1 hover:text-gray-900">
-                Agency Name {{ $sortBy === 'name' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-            </button>
-        </th>
-        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-            <button wire:click="sortColumn('type')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-                Type {{ $sortBy === 'type' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-            </button>
-        </th>
-        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-            <button wire:click="sortColumn('region')" class="flex items-center gap-1 hover:text-gray-900">
-                Region {{ $sortBy === 'region' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-            </button>
-        </th>
-        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">Contact</th>
-        <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('rfqs_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-        Total RFQs {{ $sortBy === 'rfqs_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-    </button>
-</th>
-        {{-- Headers --}}
-            <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('received_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-        Received {{ $sortBy === 'received_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-    </button>
-</th>
-<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('reviewing_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-        Reviewing {{ $sortBy === 'reviewing_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-    </button>
-</th>
-<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('quoted_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-        Quoted {{ $sortBy === 'quoted_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-    </button>
-</th>
-<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('awarded_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-        Awarded {{ $sortBy === 'awarded_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-    </button>
-</th>
-<th class="text-left px-4 py-3 text-xs font-medium text-gray-500">
-    <button wire:click="sortColumn('lost_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
-        Lost {{ $sortBy === 'lost_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
-    </button>
-</th>
-
-        <th class="px-4 py-3"></th>
-    </tr>
-</thead>
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-48">
+                        <button wire:click="sortColumn('name')" class="flex items-center gap-1 hover:text-gray-900">
+                            Agency Name {{ $sortBy === 'name' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-32">
+                        <button wire:click="sortColumn('type')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Type {{ $sortBy === 'type' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-24">
+                        <button wire:click="sortColumn('region')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Region {{ $sortBy === 'region' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-32">
+                        Contact
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-20">
+                        <button wire:click="sortColumn('rfqs_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Total RFQs {{ $sortBy === 'rfqs_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-20">
+                        <button wire:click="sortColumn('received_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Received {{ $sortBy === 'received_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-24">
+                        <button wire:click="sortColumn('reviewing_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Reviewing {{ $sortBy === 'reviewing_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-20">
+                        <button wire:click="sortColumn('quoted_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Quoted {{ $sortBy === 'quoted_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-20">
+                        <button wire:click="sortColumn('awarded_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Awarded {{ $sortBy === 'awarded_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-16">
+                        <button wire:click="sortColumn('lost_count')" class="flex items-center gap-1 hover:text-gray-900 whitespace-nowrap">
+                            Lost {{ $sortBy === 'lost_count' ? ($sortDir === 'asc' ? '↑' : '↓') : '' }}
+                        </button>
+                    </th>
+                    <th class="px-4 py-3 w-32"></th>
+                </tr>
+            </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse ($agencies as $agency)
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="px-4 py-3 font-medium text-gray-900">{{ $agency->name }}</td>
+                        <td class="px-4 py-3 font-medium text-gray-900" style="overflow-wrap: anywhere">
+                            {{ $agency->name }}
+                        </td>
                         <td class="px-4 py-3 text-gray-500">{{ $agency->type }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ $agency->region ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-500">
@@ -96,36 +98,36 @@
                             <p class="text-xs text-gray-400">{{ $agency->contact_email ?? '' }}</p>
                         </td>
                         <td class="px-4 py-3">
-    <span class="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
-        {{ $agency->rfqs_count }}
-    </span>
-</td>
-                    <td class="px-4 py-3">
-                        <span class="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                            {{ $agency->received_count }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                            {{ $agency->reviewing_count }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="bg-green-50 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                            {{ $agency->quoted_count }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="bg-teal-50 text-teal-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                            {{ $agency->awarded_count }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="bg-red-50 text-red-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                            {{ $agency->lost_count }}
-                        </span>
-                    </td>
-                <td class="px-4 py-3 text-right">
+                            <span class="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                {{ $agency->rfqs_count }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                {{ $agency->received_count }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                {{ $agency->reviewing_count }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="bg-green-50 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                {{ $agency->quoted_count }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="bg-teal-50 text-teal-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                {{ $agency->awarded_count }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="bg-red-50 text-red-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                                {{ $agency->lost_count }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-2">
                                 <a href="{{ route('agencies.edit', $agency) }}"
                                    class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition">
