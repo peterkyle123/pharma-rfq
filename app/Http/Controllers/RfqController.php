@@ -101,4 +101,9 @@ class RfqController extends Controller
         return redirect()->route('rfqs.index')
                          ->with('message', 'RFQ deleted successfully.');
     }
+    public function print(Rfq $rfq)
+{
+    $rfq->load('agency', 'items');
+    return view('rfqs.print', compact('rfq'));
+}
 }

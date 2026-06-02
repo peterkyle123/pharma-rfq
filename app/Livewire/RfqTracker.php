@@ -98,16 +98,16 @@ public function toggleDoc(int $rfqId, string $doc): void
     $current = $docs[$doc] ?? false;
 
     // Prevent checking NOA or NTP if the RFQ is Lost
-    if (in_array($doc, ['notice_of_award', 'ntp']) && $rfq->status === 'Lost') {
-        $this->addError('doc_error_' . $rfqId, 'Cannot mark this document on a Lost RFQ.');
-        return;
-    }
+if (in_array($doc, ['notice_of_award', 'purchase_order', 'ntp']) && $rfq->status === 'Lost') {
+    $this->addError('doc_error_' . $rfqId, 'Cannot mark this document on a Lost RFQ.');
+    return;
+}
 
     $docs[$doc] = $current ? false : ['received' => true, 'date' => null];
     $rfq->update(['documents' => $docs]);
 
-    // Auto-update status when Notice of Award is toggled
-    if ($doc === 'notice_of_award') {
+    // Any of these three documents indicates the RFQ was awarded
+    if (in_array($doc, ['notice_of_award', 'purchase_order', 'ntp'])) {
         $rfq->update([
             'status' => $current ? 'Quoted' : 'Awarded',
         ]);
